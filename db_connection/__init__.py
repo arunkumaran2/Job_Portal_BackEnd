@@ -1,3 +1,3 @@
-from .config import get_db_config, get_db_connection
+from .config import get_db_config, get_db_connection, init_db
 
-__all__ = ["get_db_config", "get_db_connection"]
+__all__ = ["get_db_config", "get_db_connection", "init_db"]
