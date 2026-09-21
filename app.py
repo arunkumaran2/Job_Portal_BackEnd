@@ -3,11 +3,13 @@
 from flask import Flask
 
 from jobseeker_controller.job_seeker_controller import jobseeker_bp
+from recruiters_controller.recruiter_controller import recruiter_bp
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
     app.register_blueprint(jobseeker_bp)
+    app.register_blueprint(recruiter_bp)
     return app
 
 
