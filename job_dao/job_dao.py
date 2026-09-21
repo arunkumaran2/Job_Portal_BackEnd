@@ -1,11 +1,11 @@
-"""DAO layer: MySQL persistence for jobs, skills, applications, and categories."""
+"""DAO layer: MySQL persistence for jobs, skills, and categories."""
 
 from typing import Any, Optional
 
 from mysql.connector import Error
 
 from db_connection.config import get_db_connection
-from job.job_model import Job, JobApplication, JobCategory, JobSkill
+from job.job_model import Job, JobCategory, JobSkill
 
 
 class JobDAO:
@@ -18,19 +18,6 @@ class JobDAO:
             cursor.execute(
                 "SELECT 1 FROM recruiters WHERE recruiter_id = %s LIMIT 1",
                 (recruiter_id,),
-            )
-            return cursor.fetchone() is not None
-        finally:
-            cursor.close()
-            connection.close()
-
-    def job_seeker_exists(self, job_seeker_id: int) -> bool:
-        connection = get_db_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                "SELECT 1 FROM job_seekers WHERE job_seeker_id = %s LIMIT 1",
-                (job_seeker_id,),
             )
             return cursor.fetchone() is not None
         finally:
@@ -223,121 +210,6 @@ class JobDAO:
             deleted = cursor.rowcount > 0
             connection.commit()
             return deleted
-        except Error:
-            connection.rollback()
-            raise
-        finally:
-            cursor.close()
-            connection.close()
-
-    def application_exists(self, job_id: int, job_seeker_id: int) -> bool:
-        connection = get_db_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                """
-                SELECT 1 FROM job_applications
-                WHERE job_id = %s AND job_seeker_id = %s
-                LIMIT 1
-                """,
-                (job_id, job_seeker_id),
-            )
-            return cursor.fetchone() is not None
-        finally:
-            cursor.close()
-            connection.close()
-
-    def create_application(self, application: JobApplication) -> JobApplication:
-        connection = get_db_connection()
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(
-                """
-                INSERT INTO job_applications (
-                    job_id, job_seeker_id, resume_url, cover_letter, application_status
-                ) VALUES (%s, %s, %s, %s, %s)
-                """,
-                (
-                    application.job_id,
-                    application.job_seeker_id,
-                    application.resume_url,
-                    application.cover_letter,
-                    application.application_status,
-                ),
-            )
-            application_id = cursor.lastrowid
-            connection.commit()
-            created = self.find_application_by_id(application_id)
-            if created is None:
-                raise RuntimeError("Failed to load newly created application.")
-            return created
-        except Error:
-            connection.rollback()
-            raise
-        finally:
-            cursor.close()
-            connection.close()
-
-    def find_application_by_id(self, application_id: int) -> Optional[JobApplication]:
-        connection = get_db_connection()
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(
-                """
-                SELECT ja.*, j.job_title, j.company_name
-                FROM job_applications ja
-                INNER JOIN jobs j ON j.job_id = ja.job_id
-                WHERE ja.application_id = %s
-                """,
-                (application_id,),
-            )
-            row = cursor.fetchone()
-            return JobApplication.from_row(row) if row else None
-        finally:
-            cursor.close()
-            connection.close()
-
-    def find_applications_by_job_seeker(
-        self, job_seeker_id: int
-    ) -> list[JobApplication]:
-        connection = get_db_connection()
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(
-                """
-                SELECT ja.*, j.job_title, j.company_name
-                FROM job_applications ja
-                INNER JOIN jobs j ON j.job_id = ja.job_id
-                WHERE ja.job_seeker_id = %s
-                ORDER BY ja.applied_at DESC
-                """,
-                (job_seeker_id,),
-            )
-            rows = cursor.fetchall()
-            return [JobApplication.from_row(row) for row in rows]
-        finally:
-            cursor.close()
-            connection.close()
-
-    def update_application_status(
-        self, application_id: int, status: str
-    ) -> Optional[JobApplication]:
-        connection = get_db_connection()
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                """
-                UPDATE job_applications
-                SET application_status = %s
-                WHERE application_id = %s
-                """,
-                (status, application_id),
-            )
-            if cursor.rowcount == 0:
-                connection.rollback()
-                return None
-            connection.commit()
-            return self.find_application_by_id(application_id)
         except Error:
             connection.rollback()
             raise

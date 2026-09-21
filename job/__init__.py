@@ -1,3 +1,3 @@
-from .job_model import Job, JobApplication, JobCategory, JobSkill, SavedJob
+from .job_model import Job, JobCategory, JobSkill, SavedJob
 
-__all__ = ["Job", "JobSkill", "JobCategory", "JobApplication", "SavedJob"]
+__all__ = ["Job", "JobSkill", "JobCategory", "SavedJob"]

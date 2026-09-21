@@ -1,4 +1,4 @@
-"""Controller layer: HTTP APIs for jobs and applications."""
+"""Controller layer: HTTP APIs for jobs."""
 
 from flask import Blueprint, jsonify, request
 
@@ -72,51 +72,3 @@ def delete_job(job_id: int):
         return jsonify({"error": str(exc)}), 404
     except Exception as exc:
         return jsonify({"error": "Failed to delete job.", "details": str(exc)}), 500
-
-
-@job_bp.route("/jobs/<int:job_id>/apply", methods=["POST"])
-def apply_for_job(job_id: int):
-    """Apply for Job API."""
-    payload = request.get_json(silent=True) or {}
-    try:
-        result = _service.apply_for_job(job_id, payload)
-        return jsonify(result), 201
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
-    except LookupError as exc:
-        return jsonify({"error": str(exc)}), 404
-    except Exception as exc:
-        return jsonify({"error": "Failed to apply for job.", "details": str(exc)}), 500
-
-
-@job_bp.route("/job-seekers/<int:job_seeker_id>/applications", methods=["GET"])
-def get_job_seeker_applications(job_seeker_id: int):
-    """Get Job Seeker Applications API."""
-    try:
-        result = _service.get_job_seeker_applications(job_seeker_id)
-        return jsonify(result), 200
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
-    except LookupError as exc:
-        return jsonify({"error": str(exc)}), 404
-    except Exception as exc:
-        return jsonify(
-            {"error": "Failed to fetch applications.", "details": str(exc)}
-        ), 500
-
-
-@job_bp.route("/applications/<int:application_id>/status", methods=["PATCH"])
-def update_application_status(application_id: int):
-    """Update Application Status API."""
-    payload = request.get_json(silent=True) or {}
-    try:
-        result = _service.update_application_status(application_id, payload)
-        return jsonify(result), 200
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
-    except LookupError as exc:
-        return jsonify({"error": str(exc)}), 404
-    except Exception as exc:
-        return jsonify(
-            {"error": "Failed to update application status.", "details": str(exc)}
-        ), 500

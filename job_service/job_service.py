@@ -1,10 +1,10 @@
-"""Service layer: job posting, listing, and application business logic."""
+"""Service layer: job posting and listing business logic."""
 
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, Optional
 
-from job.job_model import Job, JobApplication
+from job.job_model import Job
 from job_dao.job_dao import JobDAO
 
 VALID_JOB_TYPES = {
@@ -18,19 +18,10 @@ VALID_WORK_MODES = {"Onsite", "Remote", "Hybrid"}
 VALID_SALARY_TYPES = {"Monthly", "Yearly"}
 VALID_JOB_STATUSES = {"Draft", "Active", "Closed", "Expired"}
 VALID_SKILL_LEVELS = {"Beginner", "Intermediate", "Advanced"}
-VALID_APPLICATION_STATUSES = {
-    "Applied",
-    "Under Review",
-    "Shortlisted",
-    "Interview",
-    "Selected",
-    "Rejected",
-    "Withdrawn",
-}
 
 
 class JobService:
-    """Business rules for jobs and applications."""
+    """Business rules for jobs."""
 
     def __init__(self, dao: Optional[JobDAO] = None) -> None:
         self.dao = dao or JobDAO()
@@ -130,82 +121,6 @@ class JobService:
         return {
             "message": "Job deleted successfully.",
             "job_id": job_id,
-        }
-
-    def apply_for_job(self, job_id: int, payload: dict[str, Any]) -> dict[str, Any]:
-        if job_id is None or job_id <= 0:
-            raise ValueError("A valid job_id is required.")
-
-        job = self.dao.find_by_id(job_id)
-        if job is None:
-            raise LookupError(f"Job with job_id {job_id} not found.")
-        if job.status != "Active":
-            raise ValueError("Applications are only accepted for Active jobs.")
-
-        job_seeker_id = self._to_int(payload.get("job_seeker_id"), required=True)
-        if not self.dao.job_seeker_exists(job_seeker_id):
-            raise ValueError(
-                f"Job seeker with job_seeker_id {job_seeker_id} not found."
-            )
-
-        if self.dao.application_exists(job_id, job_seeker_id):
-            raise ValueError("You have already applied for this job.")
-
-        application = JobApplication(
-            job_id=job_id,
-            job_seeker_id=job_seeker_id,
-            resume_url=(payload.get("resume_url") or "").strip() or None,
-            cover_letter=(payload.get("cover_letter") or "").strip() or None,
-            application_status="Applied",
-        )
-        created = self.dao.create_application(application)
-        return {
-            "message": "Application submitted successfully.",
-            "application": created.to_dict(),
-        }
-
-    def get_job_seeker_applications(self, job_seeker_id: int) -> dict[str, Any]:
-        if job_seeker_id is None or job_seeker_id <= 0:
-            raise ValueError("A valid job_seeker_id is required.")
-
-        if not self.dao.job_seeker_exists(job_seeker_id):
-            raise LookupError(
-                f"Job seeker with job_seeker_id {job_seeker_id} not found."
-            )
-
-        applications = self.dao.find_applications_by_job_seeker(job_seeker_id)
-        return {
-            "count": len(applications),
-            "applications": [app.to_dict() for app in applications],
-        }
-
-    def update_application_status(
-        self, application_id: int, payload: dict[str, Any]
-    ) -> dict[str, Any]:
-        if application_id is None or application_id <= 0:
-            raise ValueError("A valid application_id is required.")
-
-        status = (payload.get("application_status") or payload.get("status") or "").strip()
-        if not status:
-            raise ValueError("application_status is required.")
-        if status not in VALID_APPLICATION_STATUSES:
-            raise ValueError(
-                "application_status must be one of: "
-                + ", ".join(sorted(VALID_APPLICATION_STATUSES))
-                + "."
-            )
-
-        existing = self.dao.find_application_by_id(application_id)
-        if existing is None:
-            raise LookupError(f"Application with application_id {application_id} not found.")
-
-        updated = self.dao.update_application_status(application_id, status)
-        if updated is None:
-            raise LookupError(f"Application with application_id {application_id} not found.")
-
-        return {
-            "message": "Application status updated successfully.",
-            "application": updated.to_dict(),
         }
 
     def _build_job_from_payload(

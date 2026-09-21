@@ -3,6 +3,7 @@
 from flask import Flask
 
 from admins_controller.admin_controller import admin_bp
+from job_application_controller.job_application_controller import job_application_bp
 from job_controller.job_controller import job_bp
 from jobseeker_controller.job_seeker_controller import jobseeker_bp
 from recruiters_controller.recruiter_controller import recruiter_bp
@@ -14,6 +15,7 @@ def create_app() -> Flask:
     app.register_blueprint(recruiter_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(job_bp)
+    app.register_blueprint(job_application_bp)
     return app
 
 

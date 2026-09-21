@@ -1,4 +1,4 @@
-"""Job-related entities matching jobs, skills, applications, and category tables."""
+"""Job-related entities matching jobs, skills, and category tables."""
 
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime
@@ -60,44 +60,6 @@ class JobCategory:
             description=row.get("description"),
             status=row.get("status") or "Active",
             created_at=row.get("created_at"),
-        )
-
-
-@dataclass
-class JobApplication:
-    """Model for a job application."""
-
-    job_id: int
-    job_seeker_id: int
-    application_id: Optional[int] = None
-    resume_url: Optional[str] = None
-    cover_letter: Optional[str] = None
-    application_status: str = "Applied"
-    applied_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    # Optional joined job fields for list responses
-    job_title: Optional[str] = None
-    company_name: Optional[str] = None
-
-    def to_dict(self) -> dict[str, Any]:
-        data = asdict(self)
-        for key, value in list(data.items()):
-            data[key] = _serialize_value(value)
-        return data
-
-    @classmethod
-    def from_row(cls, row: dict[str, Any]) -> "JobApplication":
-        return cls(
-            application_id=row.get("application_id"),
-            job_id=row.get("job_id"),
-            job_seeker_id=row.get("job_seeker_id"),
-            resume_url=row.get("resume_url"),
-            cover_letter=row.get("cover_letter"),
-            application_status=row.get("application_status") or "Applied",
-            applied_at=row.get("applied_at"),
-            updated_at=row.get("updated_at"),
-            job_title=row.get("job_title"),
-            company_name=row.get("company_name"),
         )
 
 
