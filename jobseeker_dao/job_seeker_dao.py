@@ -128,6 +128,59 @@ class JobSeekerDAO:
             cursor.close()
             connection.close()
 
+    def find_by_user_id(self, user_id: int) -> Optional[JobSeeker]:
+        connection = get_db_connection()
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT * FROM job_seekers WHERE user_id = %s",
+                (user_id,),
+            )
+            row = cursor.fetchone()
+            return JobSeeker.from_row(row) if row else None
+        finally:
+            cursor.close()
+            connection.close()
+
+    def find_all(self) -> list[JobSeeker]:
+        """Fetch all job seeker records."""
+        connection = get_db_connection()
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(
+                "SELECT * FROM job_seekers ORDER BY job_seeker_id ASC"
+            )
+            rows = cursor.fetchall()
+            return [JobSeeker.from_row(row) for row in rows]
+        finally:
+            cursor.close()
+            connection.close()
+
+    def delete_by_user_id(self, user_id: int) -> bool:
+        """Delete job_seeker and linked user row by user_id. Returns True if deleted."""
+        connection = get_db_connection()
+        try:
+            cursor = connection.cursor()
+            cursor.execute(
+                "DELETE FROM job_seekers WHERE user_id = %s",
+                (user_id,),
+            )
+            job_seeker_deleted = cursor.rowcount > 0
+
+            cursor.execute(
+                "DELETE FROM users WHERE user_id = %s",
+                (user_id,),
+            )
+            user_deleted = cursor.rowcount > 0
+            connection.commit()
+            return job_seeker_deleted or user_deleted
+        except Error:
+            connection.rollback()
+            raise
+        finally:
+            cursor.close()
+            connection.close()
+
     def find_auth_by_email(self, email: str) -> Optional[dict[str, Any]]:
         """Return user auth row joined with job seeker profile by email."""
         connection = get_db_connection()

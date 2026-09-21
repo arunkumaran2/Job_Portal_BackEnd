@@ -96,6 +96,32 @@ class JobSeekerService:
             "job_seeker": job_seeker.to_dict(),
         }
 
+    def list_job_seekers(self) -> dict[str, Any]:
+        """Return all job seeker users."""
+        job_seekers = self.dao.find_all()
+        return {
+            "count": len(job_seekers),
+            "job_seekers": [js.to_dict() for js in job_seekers],
+        }
+
+    def delete_job_seeker(self, user_id: int) -> dict[str, Any]:
+        """Delete a job seeker (and auth user) by user_id."""
+        if user_id is None or user_id <= 0:
+            raise ValueError("A valid user_id is required.")
+
+        existing = self.dao.find_by_user_id(user_id)
+        if existing is None:
+            raise LookupError(f"Job seeker with user_id {user_id} not found.")
+
+        deleted = self.dao.delete_by_user_id(user_id)
+        if not deleted:
+            raise LookupError(f"Job seeker with user_id {user_id} not found.")
+
+        return {
+            "message": "Job seeker deleted successfully.",
+            "user_id": user_id,
+        }
+
     @staticmethod
     def _to_decimal(value: Any, default: Optional[Decimal] = None) -> Optional[Decimal]:
         if value is None or value == "":
