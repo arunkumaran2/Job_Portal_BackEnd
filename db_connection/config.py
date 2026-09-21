@@ -1,10 +1,14 @@
-"""Load MySQL database settings from environment variables."""
+"""Centralized MySQL database connection configuration."""
 
 import os
+from pathlib import Path
 
+import mysql.connector
 from dotenv import load_dotenv
+from mysql.connector import MySQLConnection
 
-load_dotenv()
+# Load .env from the project root (one level above this package)
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", "3306"))
@@ -27,3 +31,8 @@ def get_db_config() -> dict:
         "password": DB_PASSWORD,
         "database": DB_NAME,
     }
+
+
+def get_db_connection() -> MySQLConnection:
+    """Create and return a MySQL database connection using .env credentials."""
+    return mysql.connector.connect(**get_db_config())
